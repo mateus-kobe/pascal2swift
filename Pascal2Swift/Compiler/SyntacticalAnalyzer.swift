@@ -213,7 +213,19 @@ class SyntacticalAnalyzer {
                     }
                 }
             } else if case .keyword = next.type, next.value == "if" {
-                
+                if let comparison = comparison(), let then = tokens.first, case .keyword = then.type, then.value == "then" {
+                    nextToken()
+                    if let ifBlock = block() {
+                        var elseBlock: Block?
+                        if let elseKey = tokens.first, case .keyword = elseKey.type, elseKey.value == "else" {
+                            nextToken()
+                            elseBlock = block()
+                        }
+                        
+                        let ifClause = If(comparison: comparison, ifBlock: ifBlock, elseBlock: elseBlock)
+                        return Instruction(assignment: nil, ifClause: ifClause, function: nil)
+                    }
+                }
             } else {
                 error = .unknownInstruction
             }
@@ -275,6 +287,17 @@ class SyntacticalAnalyzer {
             }
         }
         error = .missingSeparator
+        return nil
+    }
+    
+    func comparison() -> Comparison? {
+        if let leftSide = expression(),
+            let comparator = nextToken(),
+            case .comparison = comparator.type,
+            let rightSide = expression() {
+            return Comparison(leftSide: leftSide, comparison: comparator, rightSide: rightSide)
+        }
+        
         return nil
     }
 }

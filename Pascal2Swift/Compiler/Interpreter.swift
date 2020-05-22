@@ -30,7 +30,11 @@ class Interpreter {
         }
         print("\(integers.description)")
         
-        for instruction in program.block.instructions {
+        resolveBlock(program.block)
+    }
+    
+    func resolveBlock(_ block: Block) {
+        for instruction in block.instructions {
             if let assignment = instruction.assignment {
                 let expression = assignment.expression
                 if let result = resolveExpression(expression) as? Int {
@@ -42,6 +46,19 @@ class Interpreter {
                     if let expression = function.parameter {
                         let result = resolveExpression(expression)
                         console.text += "\(result ?? "")\n"
+                    }
+                }
+            } else if let ifClause = instruction.ifClause {
+                let comparison = ifClause.comparison
+                if let leftSide = resolveExpression(comparison.leftSide) as? Int,
+                    let rightSide = resolveExpression(comparison.rightSide) as? Int {
+                    let comparator = comparison.comparison
+                    if (comparator.value == ">" && leftSide > rightSide) ||
+                        (comparator.value == "<" && leftSide < rightSide) ||
+                        (comparator.value == "=" && leftSide == rightSide) {
+                        resolveBlock(ifClause.ifBlock)
+                    } else if let elseBlock = ifClause.elseBlock {
+                        resolveBlock(elseBlock)
                     }
                 }
             }
