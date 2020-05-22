@@ -175,5 +175,21 @@ end.
             XCTFail()
         }
     }
+    
+    func testLexicalAnalyzer_function() {
+        let lexicalAnalyzer = LexicalAnalyzer(text: "write(\"foo\");")
+        let tokens = lexicalAnalyzer.tokens
+        XCTAssertEqual(tokens.count, 5)
+        if tokens.count == 5,
+            case .identifier = tokens[0].type, // write
+            case .separator = tokens[1].type, // (
+            case .literal(.string) = tokens[2].type, // "foo"
+            case .separator = tokens[3].type, // )
+            case .separator = tokens[4].type { // ;
+            XCTAssert(true)
+        } else {
+            XCTFail()
+        }
+    }
 
 }

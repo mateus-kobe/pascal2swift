@@ -203,9 +203,14 @@ class SyntacticalAnalyzer {
     func instruction() -> Instruction? {
         if let next = nextToken() {
             if case .identifier = next.type {
-                if let next2 = nextToken(), case .assignment = next2.type {
-                    let assign = assignment(receiver: next)
-                    return Instruction(assignment: assign, ifClause: nil, function: nil)
+                if let next2 = nextToken() {
+                    if case .assignment = next2.type {
+                        let assign = assignment(receiver: next)
+                        return Instruction(assignment: assign, ifClause: nil, function: nil)
+                    } else if case .separator = next2.type, next2.value == "(" {
+                        let f = function(identifier: next)
+                        return Instruction(assignment: nil, ifClause: nil, function: f)
+                    }
                 }
             } else if case .keyword = next.type, next.value == "if" {
                 
@@ -218,7 +223,12 @@ class SyntacticalAnalyzer {
     
     func assignment(receiver: Token) -> Assignment? {
         if let expression = expression() {
-            return Assignment(receiver: receiver, expression: expression)
+            if let next = tokens.first, case .separator = next.type, next.value == ";" {
+                nextToken()
+                return Assignment(receiver: receiver, expression: expression)
+            } else {
+                error = .missingSeparator
+            }
         }
         return nil
     }
@@ -234,33 +244,37 @@ class SyntacticalAnalyzer {
                 break
             }
             
-            if let operation = tokens.first {
-                if case .operation = operation.type {
-                    nextToken()
-                    if let rightSide = tokens.first {
-                        switch rightSide.type {
-                        case .literal, .identifier:
-                            nextToken()
-                            if let separator = tokens.first, case .separator = separator.type, separator.value == ";" {
-                                nextToken()
-                                return Expression(leftSide: leftSide, operation: operation, rightSide: rightSide)
-                            } else {
-                                error = .missingSeparator
-                            }
-                        default:
-                            error = .expressionError
-                            return nil
-                        }
+            if let operation = tokens.first, case .operation = operation.type {
+                nextToken()
+                
+                if let rightSide = tokens.first {
+                    switch rightSide.type {
+                    case .literal, .identifier:
+                        nextToken()
+                        return Expression(leftSide: leftSide, operation: operation, rightSide: rightSide)
+                    default:
+                        error = .expressionError
+                        return nil
                     }
-                } else if case .separator = operation.type, operation.value == ";" {
-                    nextToken()
-                    return Expression(leftSide: leftSide, operation: nil, rightSide: nil)
-                } else {
-                    error = .expressionError
                 }
             }
+            return Expression(leftSide: leftSide, operation: nil, rightSide: nil)
         }
         
+        return nil
+    }
+    
+    func function(identifier: Token) -> Function? {
+        let expr = expression()
+        
+        if let closeParen = tokens.first, case .separator = closeParen.type, closeParen.value == ")" {
+            nextToken()
+            if let separator = tokens.first, case .separator = separator.type, separator.value == ";" {
+                nextToken()
+                return Function(name: identifier, parameter: expr)
+            }
+        }
+        error = .missingSeparator
         return nil
     }
 }

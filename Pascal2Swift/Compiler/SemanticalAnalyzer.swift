@@ -52,14 +52,23 @@ class SemanticalAnalyzer {
                 checkExistenceInTable(token: assignment.receiver)
                 
                 let expression = assignment.expression
-                if case .identifier = expression.leftSide.type {
-                    checkExistenceInTable(token: expression.leftSide)
-                }
-                
-                if let rightSide = expression.rightSide, case .identifier = rightSide.type {
-                    checkExistenceInTable(token: rightSide)
+                checkExpression(expression)
+            } else if let function = instruction.function {
+                checkExistenceInTable(token: function.name)
+                if let expression = function.parameter {
+                    checkExpression(expression)
                 }
             }
+        }
+    }
+    
+    func checkExpression(_ expression: Expression) {
+        if case .identifier = expression.leftSide.type {
+            checkExistenceInTable(token: expression.leftSide)
+        }
+        
+        if let rightSide = expression.rightSide, case .identifier = rightSide.type {
+            checkExistenceInTable(token: rightSide)
         }
     }
     

@@ -31,6 +31,7 @@ class LexicalAnalyzer {
                     value += String(c)
                     createToken(value: value)
                     value = ""
+                    isStringLiteral = !isStringLiteral
                     continue
                 }
                 isStringLiteral = !isStringLiteral
@@ -44,7 +45,7 @@ class LexicalAnalyzer {
                     createToken(value: String(c))
                     value = ""
                     continue
-                } else if c == ";" || c == "," || c == "." {
+                } else if c == ";" || c == "," || c == "." || c == "(" || c == ")" {
                     createToken(value: value)
                     createToken(value: String(c))
                     value = ""
@@ -71,12 +72,13 @@ private extension LexicalAnalyzer {
             tokens.append(token)
         } else if value[value.startIndex] == "\"" && value[value.index(value.endIndex, offsetBy: -1)..<value.endIndex] == "\"" {
             let startIndex = value.index(value.startIndex, offsetBy: 1)
-            let token = Token(type: .literal(.string), value: String(value[startIndex..<value.endIndex]))
+            let endIndex = value.index(value.endIndex, offsetBy: -1)
+            let token = Token(type: .literal(.string), value: String(value[startIndex..<endIndex]))
             tokens.append(token)
         } else if value.starts(with: "//") {
             let token = Token(type: .comment, value: value)
             tokens.append(token)
-        } else if value == ";" || value == "," || value == ":" || value == "." {
+        } else if value == ";" || value == "," || value == ":" || value == "." || value == "(" || value == ")" {
             let token = Token(type: .separator, value: value)
             tokens.append(token)
         } else if LexicalAnalyzer.keywords.contains(value) {

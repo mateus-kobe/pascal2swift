@@ -45,7 +45,7 @@ class ViewController: UIViewController {
                     if let error = semanticalAnalyzer.error {
                         consoleTextView.text = "\(error)"
                     } else {
-                        Interpreter(table: semanticalAnalyzer.table, program: program)
+                        Interpreter(table: semanticalAnalyzer.table, program: program, console: consoleTextView)
                     }
                 }
             }
