@@ -10,11 +10,50 @@ import UIKit
 
 class ViewController: UIViewController {
 
+    @IBOutlet weak var programTextView: UITextView!
+    @IBOutlet weak var consoleTextView: UITextView!
+    
+    lazy var compileButton = {
+        return UIBarButtonItem(title: "Compile", style: .done, target: self, action: #selector(compile))
+    }()
+    
+    lazy var clearButton = {
+        return UIBarButtonItem(title: "Clear", style: .plain, target: self, action: #selector(clear))
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+        
+        navigationItem.rightBarButtonItem = compileButton
+        navigationItem.leftBarButtonItem = clearButton
     }
 
-
+    @objc func compile() {
+        consoleTextView.text = ""
+        programTextView.resignFirstResponder()
+        
+        let lexicalAnalyzer = LexicalAnalyzer(text: programTextView.text)
+        if let error = lexicalAnalyzer.error {
+            consoleTextView.text = "\(error)"
+        } else {
+            let syntacticalAnalyzer = SyntacticalAnalyzer(tokens: lexicalAnalyzer.tokens)
+            if let error = syntacticalAnalyzer.error {
+                consoleTextView.text = "\(error)"
+            } else {
+                if let program = syntacticalAnalyzer.code {
+                    let semanticalAnalyzer = SemanticalAnalyzer(program: program)
+                    if let error = semanticalAnalyzer.error {
+                        consoleTextView.text = "\(error)"
+                    } else {
+                        Interpreter(table: semanticalAnalyzer.table, program: program)
+                    }
+                }
+            }
+        }
+    }
+    
+    @objc func clear() {
+        programTextView.text = ""
+    }
 }
 
